@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jet Stream Toronto</title>
+<meta name="description" content="Jet Stream Toronto is a five-day, in-person project sprint for generalists moving into AI safety. Toronto, 8 to 12 January 2027 (provisional).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout idea: one continuous purple night. The hero holds Toronto's skyline;
+     scrolling is the only thing that moves it. The city is seen whole first; then it
+     bubbles away as you go down and the sun comes up from behind the skyline, travels to
+     the middle of the facts board and rests behind it. Further down it sets: still big,
+     it sinks behind "The gap" and the roles, then shrinks and lands on the first dot of
+     the week's timeline. Going back up reverses all of it.
+     A tiny CN Tower beside the Take part button fills up as you read down the page.
+     Orange marks the gap and the role descriptions. */
+  --night: #140E29;
+  --plum: #1A1136;
+  --violet: #6A48E8;
+  --violet-hi: #8E73FF;
+  --lilac: #CFC3FF;
+  --amber: #FFB55E;
+  --orange: #F2892E;
+  --ink: #1B1433;
+
+  --text: #DDD6F3;
+  --text-soft: #B3A8D6;
+  --rule: rgba(207, 195, 255, 0.16);
+  --card: rgba(255, 255, 255, 0.05);
+
+  /* One family throughout: Schibsted Grotesk, a sober news-style grotesque. Titles and
+     text differ by size and weight, not by typeface. */
+  --font-display: "Schibsted Grotesk", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Schibsted Grotesk", "Helvetica Neue", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --wrap: 1120px;
+  --gutter: clamp(20px, 5vw, 56px);
+  --radius: 14px;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img, svg, canvas { max-width: 100%; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; margin: 0; text-wrap: balance; color: #fff; }
+h2 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); }
+h3 { font-size: 1.25rem; letter-spacing: -0.01em; line-height: 1.2; }
+p { margin: 0; }
+.wrap { max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gutter); }
+.lede { font-size: 1.1875rem; color: #C9C0E6; max-width: 62ch; }
+.num { font-variant-numeric: lining-nums; }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+.skip { position: absolute; left: -999px; top: 8px; background: #fff; color: var(--ink); padding: 10px 14px; border-radius: 8px; z-index: 50; }
+.skip:focus { left: 12px; }
+.ext { width: 0.8em; height: 0.8em; flex: none; }
+[hidden] { display: none !important; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font: 600 1rem/1 var(--font-body);
+  padding: 15px 22px; border-radius: 999px; border: 1.5px solid transparent;
+  text-decoration: none; cursor: pointer;
+  transition: transform .18s ease, background-color .18s ease, border-color .18s ease, color .18s ease;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0) scale(0.98); }
+.btn-light { background: #fff; color: var(--ink); }
+.btn-light:hover { background: var(--lilac); }
+.btn-ghost { border-color: var(--rule); color: #fff; }
+.btn-ghost:hover { border-color: var(--lilac); }
+.soon {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-weight: 500; font-size: 0.98rem; color: var(--lilac);
+  padding: 13px 18px; border-radius: 999px; border: 1.5px dashed rgba(207, 195, 255, 0.4);
+}
+.pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); flex: none; box-shadow: 0 0 0 0 rgba(255, 181, 94, 0.6); animation: pulse 2.4s ease-out infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 181, 94, 0.55); } 70%, 100% { box-shadow: 0 0 0 10px rgba(255, 181, 94, 0); } }
+
+/* A small press-and-settle that every clickable square shares. */
+.tappable { position: relative; }
+.tap { animation: tap .42s cubic-bezier(.3,.7,.3,1); }
+@keyframes tap { 0% { transform: scale(1); } 28% { transform: scale(0.955) rotate(-0.7deg); } 62% { transform: scale(1.02) rotate(0.5deg); } 100% { transform: scale(1); } }
+
+/* ---------- top strip + nav ---------- */
+.strip { background: var(--violet); color: #fff; font-size: 0.93rem; font-weight: 500; text-align: center; padding: 9px var(--gutter); }
+.strip a { font-weight: 600; text-underline-offset: 3px; white-space: nowrap; }
+.nav { position: sticky; top: 0; z-index: 20; background: rgba(20, 14, 41, 0.86); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--rule); color: #fff; }
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 64px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 600 1.2rem/1 var(--font-display); letter-spacing: -0.02em; color: #fff; }
+.brand small { font: 500 0.82rem/1 var(--font-body); color: var(--text-soft); letter-spacing: 0; padding-left: 10px; border-left: 1px solid var(--rule); }
+.brand svg { width: 30px; height: 20px; flex: none; }
+.brand svg path { fill: none; stroke: var(--lilac); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 60; stroke-dashoffset: 0; }
+.nav .brand svg path { animation: draw 1.3s cubic-bezier(.2,.7,.2,1) both; }
+.nav .brand svg path:nth-child(2) { animation-delay: .12s; }
+.nav .brand svg path:nth-child(3) { animation-delay: .24s; }
+@keyframes draw { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
+.nav ul { display: flex; gap: 26px; list-style: none; margin: 0; padding: 0; font-size: 0.96rem; }
+.nav ul a { text-decoration: none; color: var(--text-soft); padding: 8px 0; transition: color .15s ease; }
+.nav ul a:hover { color: #fff; }
+.nav .btn { padding: 11px 18px; font-size: 0.93rem; }
+.nav-end { display: flex; align-items: center; gap: 16px; }
+@media (max-width: 860px) { .nav ul { display: none; } .brand small { display: none; } }
+
+/* ---------- the scroll tower: it fills from the base as you read ---------- */
+.tower-ghost { fill: rgba(207, 195, 255, 0.16); stroke: rgba(207, 195, 255, 0.4); stroke-width: 0.8; }
+.tower-lit { fill: url(#towerGrad); }
+.tower-beacon { fill: #FF6A4D; opacity: 0.25; }
+.is-top .tower-beacon { opacity: 1; }
+/* The tower is a small mark just right of the Take part button. From tablet width up it
+   hangs in the page margin, so the button stays lined up with the content edge. */
+.nav-end { position: relative; gap: 12px; }
+.nav-tower { display: block; width: 8px; height: 28px; flex: none; opacity: 0.9; }
+.nav-tower .tower-ghost { fill: rgba(207, 195, 255, 0.45); stroke: none; }
+@media (min-width: 700px) { .nav-tower { position: absolute; left: calc(100% + 14px); top: 50%; transform: translateY(-50%); width: 10px; height: 35px; } }
+
+/* ---------- hero ---------- */
+.top {
+  --horizon: 72%;
+  position: relative; z-index: 2; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(72% 40% at 78% var(--horizon), rgba(106, 72, 232, 0.5) 0%, rgba(106, 72, 232, 0) 70%),
+    linear-gradient(180deg, #100B22 0%, var(--night) 40%, #1E1342 76%, var(--night) 100%);
+}
+@media (max-width: 960px) { .top { --horizon: 65%; } }
+.hero { position: relative; z-index: 1; overflow: hidden; color: #fff; padding: clamp(48px, 7vw, 88px) 0 250px; }
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero .wrap { position: relative; z-index: 1; }
+.hero-copy { max-width: min(640px, 54vw); }
+.when { font-weight: 500; color: var(--lilac); margin-bottom: 22px; }
+.hero h1 { font-size: clamp(2.4rem, 4.9vw, 3.9rem); line-height: 1.06; letter-spacing: -0.025em; }
+.hero .lede { color: var(--text); margin-top: 24px; font-size: 1.1875rem; }
+.cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
+.hero .more { display: inline-block; margin-top: 22px; color: var(--text-soft); text-underline-offset: 4px; font-size: 0.98rem; }
+.hero .more:hover { color: #fff; }
+@media (max-width: 999px) { .hero { padding-bottom: 290px; } .hero-copy { max-width: 640px; } }
+
+/* ---------- facts ---------- */
+.facts { position: relative; z-index: 1; padding: 0 0 clamp(48px, 7vw, 80px); color: #fff; }
+.facts .wrap { position: relative; }
+/* The sun sits behind both the hero and the board, so it can travel from one to the
+   other: up from behind the skyline, then on to the middle of the board, where it stays.
+   Scroll sets all of it. --sun-x and --sun-y are its centre, measured from the top left
+   of .top; --sun-cut hides the part of the disc still below the horizon; --sun-glow is
+   the strength of the light around it. */
+.sun {
+  position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none;
+  width: clamp(300px, 46vw, 560px); aspect-ratio: 1;
+  transform: translate(calc(var(--sun-x, 0px) - 50%), calc(var(--sun-y, 0px) - 50%)) scale(var(--sun-k, 1));
+  opacity: var(--sun-o, 1);
+  will-change: transform, opacity;
+}
+/* The sun does not stop at the board. Once it leaves, a second copy carries on down the
+   page. It is fixed to the screen and sits between each section's background and its
+   content, so it lights the sections from behind the way it lights the board. The two
+   copies are always drawn in the same place: the first is only visible inside .top, the
+   second only below it (.top is opaque and stacked above it), so together they read as
+   one sun crossing the edge. */
+.sun-orb { position: fixed; z-index: 1; visibility: hidden; }
+.sun-orb.is-on { visibility: visible; }
+main > section > .wrap { position: relative; z-index: 2; }
+.sun::before {
+  content: ""; position: absolute; inset: 0; opacity: var(--sun-glow, 0);
+  background: radial-gradient(circle closest-side, rgba(242, 137, 46, 0.62) 0%, rgba(242, 137, 46, 0.62) 32%, rgba(242, 137, 46, 0.24) 61%, rgba(242, 137, 46, 0) 96%);
+}
+.sun::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 32%; height: 32%; margin: -16% 0 0 -16%;
+  background: radial-gradient(circle closest-side, #FFD896 0%, #FFC46E 53%, #FFB55E 75%, rgba(242, 137, 46, 0) 100%);
+  clip-path: inset(0 0 var(--sun-cut, 100%) 0);
+}
+.facts dl { position: relative; z-index: 1; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: var(--radius); background: rgba(20, 14, 41, 0.6); }
+.facts div { padding: 22px 22px 24px; border-left: 1px solid var(--rule); min-width: 0; }
+.facts div:first-child { border-left: 0; }
+.facts dt { font-size: 0.9rem; color: var(--text); margin-bottom: 14px; }
+.facts dd { margin: 0; font: 600 1.35rem/1.15 var(--font-display); letter-spacing: -0.015em; }
+.facts dd a { text-decoration-color: rgba(207, 195, 255, 0.5); text-underline-offset: 4px; }
+.facts dd span { display: block; font: 400 0.9rem/1.4 var(--font-body); letter-spacing: 0; color: var(--text); margin-top: 8px; }
+@media (max-width: 960px) { .facts dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts div { border-left: 0; border-top: 1px solid var(--rule); } .facts div:nth-child(-n+2) { border-top: 0; } .facts div:nth-child(even) { border-left: 1px solid var(--rule); } }
+@media (max-width: 460px) { .facts dl { grid-template-columns: 1fr; } .facts div:nth-child(n) { border-left: 0; border-top: 1px solid var(--rule); } .facts div:first-child { border-top: 0; } }
+
+/* ---------- sections: two close shades of the same purple ---------- */
+.band { padding: clamp(64px, 9vw, 120px) 0; background: var(--night); border-top: 1px solid var(--rule); }
+.band-b { background: radial-gradient(60% 50% at 12% 0%, rgba(106, 72, 232, 0.2) 0%, rgba(106, 72, 232, 0) 70%), var(--plum); }
+.head { display: grid; gap: 18px; margin-bottom: clamp(32px, 5vw, 56px); max-width: 760px; }
+
+/* ---------- the gap ---------- */
+.gap { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr); gap: clamp(32px, 6vw, 80px); align-items: start; }
+.gap-text { display: grid; gap: 22px; font-size: 1.125rem; max-width: 60ch; }
+.gap-text a, .gap-text q { color: var(--amber); }
+.gap-text a { font-weight: 600; text-decoration-thickness: 1.5px; text-underline-offset: 3px; text-decoration-color: rgba(255, 181, 94, 0.45); transition: text-decoration-color .15s ease; }
+.gap-text a:hover { text-decoration-color: var(--amber); }
+.gap-text .turn { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.015em; padding-top: 6px; color: #fff; }
+.gap-data { display: grid; gap: 18px; }
+.bars { margin: 0; background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 24px 24px 20px; }
+.bars figcaption { font: 600 1.05rem/1.2 var(--font-display); margin-bottom: 18px; color: #fff; }
+.bar-row { display: grid; gap: 6px; margin-bottom: 16px; }
+.bar-row .lab { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 0.95rem; }
+.bar-row .lab b { font: 600 1.25rem/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; color: #fff; }
+.bar { height: 16px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; }
+.bar .research { width: 100%; background: var(--violet-hi); }
+.bar .rest { width: 13.3%; background: var(--orange); }
+.bars .src { font-size: 0.88rem; color: var(--text-soft); margin-top: 4px; }
+.bars .src a { text-underline-offset: 3px; }
+.proof { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.proof a { display: grid; grid-template-columns: 122px minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 20px; background: var(--card); border: 1px solid var(--rule); border-left: 4px solid var(--orange); border-radius: 0 var(--radius) var(--radius) 0; text-decoration: none; transition: border-color .18s ease, background-color .18s ease; }
+.proof a:hover { border-color: var(--orange); background: rgba(242, 137, 46, 0.08); }
+.proof b { font: 600 1.85rem/1 var(--font-display); letter-spacing: -0.03em; color: var(--amber); white-space: nowrap; }
+.proof span { font-size: 0.95rem; color: var(--text-soft); }
+.proof em { display: block; font-style: normal; font-weight: 600; font-size: 0.84rem; color: #fff; margin-top: 4px; }
+@media (max-width: 900px) { .gap { grid-template-columns: 1fr; } }
+@media (max-width: 460px) { .proof a { grid-template-columns: 1fr; gap: 8px; } }
+
+.gap-short { display: grid; gap: 20px; justify-items: start; font-size: 1.125rem; max-width: 62ch; }
+.gap-short .turn { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.015em; color: #fff; }
+.more-btn { display: inline-flex; align-items: center; gap: 14px; margin-top: 6px; padding: 14px 22px; border-radius: 999px; cursor: pointer; background: var(--card); border: 1.5px solid var(--rule); color: #fff; font: 600 1rem/1 var(--font-body); transition: border-color .18s ease, background-color .18s ease; }
+.more-btn:hover { border-color: var(--lilac); }
+.more-btn[aria-expanded="true"] { border-color: var(--orange); background: rgba(242, 137, 46, 0.14); }
+#gap-more { margin-top: 34px; animation: reveal .28s ease-out; }
+
+/* ---------- roles: pick one to open it ---------- */
+.roles-hint { color: var(--amber); font-weight: 500; }
+.roles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.role-tile {
+  order: var(--r3);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; text-align: left;
+  padding: 22px 22px; min-height: 92px; border-radius: var(--radius); cursor: pointer;
+  background: var(--card); border: 1.5px solid var(--rule); color: #fff;
+  font: 600 1.2rem/1.2 var(--font-display); letter-spacing: -0.01em;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+.role-tile:hover { border-color: var(--lilac); }
+.role-tile[aria-expanded="true"] { border-color: var(--orange); background: rgba(242, 137, 46, 0.14); }
+.role-panel {
+  order: calc(var(--r3) + 1); grid-column: 1 / -1;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: clamp(20px, 4vw, 48px);
+  padding: clamp(22px, 3vw, 32px); border-radius: var(--radius);
+  background: rgba(242, 137, 46, 0.09); border: 1px solid rgba(242, 137, 46, 0.5);
+  animation: reveal .28s ease-out;
+}
+@keyframes reveal { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.role-panel blockquote { margin: 0; position: relative; padding-left: 34px; font: 500 1.3rem/1.3 var(--font-display); letter-spacing: -0.01em; color: var(--amber); }
+.role-panel blockquote::before { content: "\201C"; position: absolute; left: -2px; top: -0.16em; font: 700 3.2rem/1 var(--font-display); color: var(--orange); }
+.role-panel cite { display: block; margin-top: 12px; font: 500 0.88rem/1.3 var(--font-body); font-style: normal; letter-spacing: 0; color: var(--text-soft); }
+.role-panel cite a { color: var(--amber); font-weight: 600; text-underline-offset: 3px; }
+.role-panel .does { margin-top: 18px; color: var(--text); }
+.role-panel dl { margin: 0; display: grid; gap: 16px; align-content: start; }
+.role-panel dt { font-size: 0.84rem; font-weight: 600; color: var(--text-soft); margin-bottom: 4px; }
+.role-panel dd { margin: 0; color: #fff; }
+.role-panel dd + dd { margin-top: 5px; }
+.role-panel dd a { text-decoration-color: rgba(255, 181, 94, 0.6); text-decoration-thickness: 1.5px; text-underline-offset: 3px; transition: color .15s ease; }
+.role-panel dd a:hover { color: var(--amber); }
+.role-panel dd a .ext { color: var(--amber); margin-left: 2px; }
+.roles-note { margin-top: 22px; font-size: 0.92rem; color: var(--text-soft); max-width: 78ch; }
+.roles-note a { color: var(--amber); font-weight: 600; text-underline-offset: 3px; }
+@media (max-width: 980px) { .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .role-tile { order: var(--r2); } .role-panel { order: calc(var(--r2) + 1); } }
+@media (max-width: 620px) { .roles { grid-template-columns: 1fr; } .role-tile { order: var(--r1); min-height: 0; } .role-panel { order: calc(var(--r1) + 1); grid-template-columns: 1fr; } }
+
+/* ---------- week ---------- */
+.days { position: relative; list-style: none; margin: 0; padding: 0 0 0 34px; --p: 0; }
+.days::before, .days::after { content: ""; position: absolute; left: 7px; top: 14px; bottom: 14px; width: 2px; border-radius: 2px; }
+.days::before { background: var(--rule); }
+.days::after { background: linear-gradient(180deg, var(--violet-hi), var(--orange)); transform-origin: top; transform: scaleY(var(--p)); transition: transform .25s linear; }
+.day { position: relative; display: grid; grid-template-columns: 150px minmax(0, 1fr) minmax(0, 270px); gap: 8px 32px; padding: 24px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+.day:last-child { border-bottom: 0; }
+.day::before { content: ""; position: absolute; left: -34px; top: 30px; width: 16px; height: 16px; border-radius: 50%; background: var(--plum); border: 2px solid rgba(207, 195, 255, 0.5); z-index: 1; transition: background-color .3s ease, border-color .3s ease, transform .3s ease, box-shadow .5s ease; }
+.day.on::before { background: var(--amber); border-color: var(--amber); transform: scale(1.1); }
+/* the first dot is where the sun ends up, so it keeps a little of its light */
+.day.sunlit::before { box-shadow: 0 0 0 4px rgba(255, 181, 94, 0.16), 0 0 18px 5px rgba(242, 137, 46, 0.55); }
+.day .date { font-weight: 600; color: var(--lilac); padding-top: 3px; }
+.day .date span { display: block; font-weight: 400; color: var(--text-soft); font-size: 0.94rem; }
+.day h3 { margin-bottom: 8px; }
+.day p { color: var(--text-soft); max-width: 56ch; }
+.day .out { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; font-size: 0.96rem; color: #fff; }
+.day .out b { display: block; font-weight: 500; font-size: 0.86rem; color: var(--text-soft); margin-bottom: 4px; }
+.aside-note { margin-top: 36px; padding: 22px 24px; background: var(--card); border-left: 3px solid var(--amber); border-radius: 0 10px 10px 0; max-width: 780px; }
+@media (max-width: 900px) { .day { grid-template-columns: 1fr; } .day .date span { display: inline; margin-left: 8px; } }
+
+/* ---------- who ---------- */
+.who { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.ticks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ticks li { padding: 15px 0 15px 34px; border-bottom: 1px solid var(--rule); position: relative; }
+.ticks li::before { content: ""; position: absolute; left: 4px; top: 24px; width: 14px; height: 8px; border-left: 2.5px solid var(--lilac); border-bottom: 2.5px solid var(--lilac); transform: rotate(-45deg) translateY(-4px); }
+.panel { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 28px; }
+.panel h3 { margin-bottom: 14px; }
+.panel ul { margin: 0; padding-left: 20px; color: var(--text-soft); display: grid; gap: 10px; }
+@media (max-width: 860px) { .who { grid-template-columns: 1fr; } }
+
+/* ---------- toronto: deliberately small ---------- */
+.toronto { background: var(--plum); color: #fff; padding: 30px 0; border-top: 1px solid var(--rule); }
+.toronto .wrap { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr); gap: 16px 40px; align-items: center; }
+.toronto h2 { font-size: 1.35rem; letter-spacing: -0.01em; }
+.toronto p { color: var(--text-soft); font-size: 0.95rem; margin-top: 6px; }
+.toronto ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.toronto li a { display: block; height: 100%; padding: 12px 34px 12px 14px; border-radius: 10px; border: 1px solid var(--rule); background: var(--card); text-decoration: none; font-size: 0.9rem; color: var(--text); transition: border-color .18s ease; }
+.toronto li a:hover { border-color: var(--lilac); }
+.toronto li b { font: 600 1.25rem/1 var(--font-display); color: var(--lilac); margin-right: 6px; }
+@media (max-width: 900px) { .toronto .wrap { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .toronto ul { grid-template-columns: 1fr; } }
+
+/* ---------- mentors ---------- */
+.mentors { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 0; }
+.steps li { counter-increment: s; position: relative; padding: 18px 0 18px 56px; border-bottom: 1px solid var(--rule); }
+.steps li:last-child { border-bottom: 0; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 16px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--violet); color: #fff; font: 600 1rem/1 var(--font-display); }
+.steps b { display: block; font-weight: 600; color: #fff; }
+.steps span { color: var(--text-soft); font-size: 0.98rem; }
+.good { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 28px; }
+.good h3 { margin-bottom: 14px; }
+.good ul { margin: 0 0 26px; padding-left: 20px; color: var(--text-soft); display: grid; gap: 8px; }
+@media (max-width: 860px) { .mentors { grid-template-columns: 1fr; } }
+
+/* ---------- take part ---------- */
+.join { background: radial-gradient(70% 60% at 80% 100%, rgba(106, 72, 232, 0.35) 0%, rgba(106, 72, 232, 0) 70%), var(--plum); }
+.paths { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.path { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px; align-items: flex-start; padding: clamp(26px, 4vw, 40px); border-radius: 20px; border: 1px solid var(--rule); background: var(--card); min-height: 280px; }
+.path.live { background: linear-gradient(150deg, #7C5BF6 0%, #4B2FC0 100%); border-color: transparent; }
+.path .state { display: inline-flex; align-items: center; gap: 9px; font-size: 0.92rem; font-weight: 600; color: #fff; }
+.path h3 { font-size: clamp(1.6rem, 2.6vw, 2.1rem); letter-spacing: -0.02em; }
+.path p { color: #E3DCF8; max-width: 44ch; flex: 1; }
+/* Wind on the mentor card. The streaks are drawn on a canvas (see wind() in the script)
+   so they can gust, stretch and ripple; the card's text and button sit above them. */
+.path > * { position: relative; z-index: 1; }
+.path canvas.wind { position: absolute; z-index: 0; right: 0; bottom: 0; width: min(82%, 430px); height: 132px; pointer-events: none; }
+.live-dot { width: 9px; height: 9px; border-radius: 50%; background: #7DF0B0; flex: none; }
+.contact { margin-top: 16px; padding: 22px 26px; border-radius: var(--radius); border: 1px solid var(--rule); background: var(--card); display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; }
+.contact a { font-weight: 600; text-underline-offset: 4px; }
+@media (max-width: 760px) { .paths { grid-template-columns: 1fr; } .path { min-height: 0; } }
+
+/* ---------- footer ---------- */
+footer { background: var(--night); color: var(--text-soft); padding: 44px 0 56px; font-size: 0.95rem; border-top: 1px solid var(--rule); }
+footer .wrap { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; }
+footer p { max-width: 52ch; margin-top: 14px; }
+footer a { color: #fff; text-underline-offset: 3px; }
+footer ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; align-content: start; }
+footer ul a { text-decoration: none; color: var(--text-soft); }
+footer ul a:hover { color: #fff; }
+@media (max-width: 720px) { footer .wrap { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pulse, .nav .brand svg path, .tap, .role-panel, #gap-more { animation: none; }
+  .btn, .day::before, .days::after { transition: none; }
+  .btn:hover { transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="ext" viewBox="0 0 16 16"><path d="M5 3h8v8M13 3 3 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <linearGradient id="towerGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8E73FF"/><stop offset="0.55" stop-color="#CFC3FF"/><stop offset="1" stop-color="#FFB55E"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="strip">
+  Mentor project submissions are open. Fellow applications open soon.
+  <a href="https://airtable.com/applDKTd0XlqBgrWq/pagl116Ptf667IOSN/form" target="_blank" rel="noopener" data-mentor-link>Submit a project</a>
+</div>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Jet Stream Toronto, back to top">
+      <svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 5c5-3 9 3 14 0s7-3 12-1"/><path d="M2 11c4-2 7 2 11 0s6-2 10-1"/><path d="M2 17c3-2 5 1 8 0"/></svg>
+      Jet Stream <small>Toronto</small>
+    </a>
+    <nav aria-label="Sections">
+      <ul>
+        <li><a href="#gap">The gap</a></li>
+        <li><a href="#roles">The roles</a></li>
+        <li><a href="#week">The week</a></li>
+        <li><a href="#mentors">For mentors</a></li>
+      </ul>
+    </nav>
+    <div class="nav-end">
+      <a class="btn btn-light" href="#take-part">Take part</a>
+      <svg class="nav-tower js-tower" viewBox="0 0 18 64" aria-hidden="true" data-w="18" data-h="64" data-pad="2">
+        <clipPath id="clipNav"><rect class="js-clip" x="0" y="64" width="18" height="0"/></clipPath>
+        <path class="tower-ghost js-path"/><path class="tower-lit js-path" clip-path="url(#clipNav)"/>
+        <circle class="tower-beacon js-beacon" r="1.4"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<div class="sun sun-orb" aria-hidden="true"></div>
+
+<main id="main">
+
+<div class="top">
+<div class="sun" aria-hidden="true"></div>
+<section class="hero" id="top">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="when num">Toronto, 8 to 12 January 2027. Dates provisional.</p>
+      <h1>Five days to show AI safety organizations what you can do.</h1>
+      <p class="lede">Jet Stream Toronto is an in-person project sprint for generalists moving into AI safety. You pick a real problem from an AI safety organization, build it with a mentor, and present it at a demo day in front of people from the field.</p>
+      <div class="cta-row">
+        <a class="btn btn-light" href="https://airtable.com/applDKTd0XlqBgrWq/pagl116Ptf667IOSN/form" target="_blank" rel="noopener" data-mentor-link>Submit a mentor project <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>
+        <span class="soon" data-fellow-soon><span class="pulse"></span>Fellow applications open soon</span>
+        <a class="btn btn-ghost" href="#" target="_blank" rel="noopener" data-fellow-link hidden>Apply as a fellow <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>
+      </div>
+      <a class="more" href="#gap">Why this exists</a>
+    </div>
+  </div>
+</section>
+
+<section class="facts" aria-label="Key facts">
+  <div class="wrap">
+    <dl>
+      <div><dt>Dates</dt><dd class="num">8–12 January 2027<span>Provisional until the venue is confirmed</span></dd></div>
+      <div><dt>Format</dt><dd>5 days, in person<span>Friday to Tuesday, full days</span></dd></div>
+      <div><dt>Venue</dt><dd><a href="https://www.trajectorylabs.org/" target="_blank" rel="noopener">Trajectory Labs</a><span>Planned venue, Toronto</span></dd></div>
+      <div><dt>Cohort</dt><dd class="num">12 fellows<span>One project and one mentor each</span></dd></div>
+      <div><dt>Cost</dt><dd>No fee<span>Meals included. Travel support depends on funding.</span></dd></div>
+    </dl>
+  </div>
+</section>
+</div>
+
+<section class="band band-b" id="gap">
+  <div class="wrap">
+    <div class="head">
+      <h2>The gap we are trying to close</h2>
+      <p class="lede">AI safety has built a clear path for researchers. It has not built one for the people who run everything else.</p>
+    </div>
+    <div class="gap-short">
+      <p>Organizations working on AI safety struggle to hire for operations, programmes, recruiting and communications. Plenty of capable people want that work, but a CV cannot show whether someone can take a vague problem and ship something useful.</p>
+      <p class="turn">Jet Stream gives them five days to show it: a real problem, a deadline, a mentor and an audience.</p>
+      <button class="more-btn tappable" type="button" aria-expanded="false" aria-controls="gap-more" data-open="Hide the numbers" data-closed="See the numbers behind this"><span>See the numbers behind this</span></button>
+    </div>
+    <div class="gap" id="gap-more" hidden>
+      <div class="gap-text">
+        <p>If you want to do AI safety research, the route is well marked: a course, a mentored project, a fellowship, a job. <a href="https://forum.effectivealtruism.org/posts/k3nq7FxBCsrNFmAYi/ai-safety-s-biggest-talent-gap-isn-t-researchers-it-s-2" target="_blank" rel="noopener">By Kairos's count</a>, more than 20 research fellowships will train between 2,000 and 2,500 people this year. For everything else an organization needs, roughly seven programmes will train about 300.</p>
+        <p>Meanwhile the work piles up. <a href="https://forum.effectivealtruism.org/posts/SE8eXaRJt8cSpJzRf/scaling-organisations-making-ai-go-well-career-review" target="_blank" rel="noopener">80,000 Hours reports</a> that organizations working on AI safety struggle to fill roles such as chief of staff, recruiting lead and programme manager. <a href="https://forum.effectivealtruism.org/posts/NrYkhgh6ZGrGtxxnc/talent-constraints-in-ai-safety-what-we-know-and-what-don" target="_blank" rel="noopener">A review of the evidence from April 2026</a> found that hiring for operational and fieldbuilding roles is <q>challenging across the field</q>.</p>
+        <p>Interest is not the problem. A non-research posting can draw hundreds of applications and still surface <a href="https://forum.effectivealtruism.org/posts/k3nq7FxBCsrNFmAYi/ai-safety-s-biggest-talent-gap-isn-t-researchers-it-s-2" target="_blank" rel="noopener">only zero to five people</a> who meet the core requirements. <a href="https://forum.effectivealtruism.org/posts/JrJWZK7Mqj3hS5xTk/new-talent-is-coming-to-ai-safety-what-happens-next" target="_blank" rel="noopener">One organization counted 670 applications</a> for a single special-projects role. A CV cannot show whether someone can take a vague problem and ship something useful.</p>
+      </div>
+      <aside class="gap-data" aria-label="The evidence in numbers">
+        <figure class="bars">
+          <figcaption>Fellowship places this year</figcaption>
+          <div class="bar-row"><div class="lab"><span>Research</span><b class="num">2,000–2,500</b></div><div class="bar"><i class="research"></i></div></div>
+          <div class="bar-row"><div class="lab"><span>Everything else</span><b class="num">about 300</b></div><div class="bar"><i class="rest"></i></div></div>
+          <p class="src">Estimates from <a href="https://forum.effectivealtruism.org/posts/k3nq7FxBCsrNFmAYi/ai-safety-s-biggest-talent-gap-isn-t-researchers-it-s-2" target="_blank" rel="noopener">Kairos, April 2026</a></p>
+        </figure>
+        <ul class="proof">
+          <li><a class="tappable" href="https://forum.effectivealtruism.org/posts/k3nq7FxBCsrNFmAYi/ai-safety-s-biggest-talent-gap-isn-t-researchers-it-s-2" target="_blank" rel="noopener"><b class="num">0–5</b><span>applicants who meet the core requirements on many non-research postings, out of hundreds<em>Kairos, April 2026</em></span></a></li>
+          <li><a class="tappable" href="https://forum.effectivealtruism.org/posts/JrJWZK7Mqj3hS5xTk/new-talent-is-coming-to-ai-safety-what-happens-next" target="_blank" rel="noopener"><b class="num">670</b><span>applications one organization received for a single special-projects role<em>Ismaili and Linnik, July 2026</em></span></a></li>
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="roles">
+  <div class="wrap">
+    <div class="head">
+      <h2>What generalist work looks like</h2>
+      <p class="roles-hint">Pick one to open it.</p>
+    </div>
+    <div class="roles" id="roleGrid">
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-ops" style="--r3:1;--r2:1;--r1:1"><span>Operations and systems</span></button>
+      <div class="role-panel" id="role-ops" role="region" aria-label="Operations and systems" style="--r3:1;--r2:1;--r1:1" hidden>
+        <div><blockquote>Operations people <q>act as multipliers, maximising the productivity of others in the organisation</q>.<cite><a href="https://80000hours.org/articles/operations-management/" target="_blank" rel="noopener">80,000 Hours, Operations management</a></cite></blockquote><p class="does">Finance, people operations, offices, internal tools and the processes that hold them together.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Operations generalist, people operations manager, office manager, executive assistant</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://kairos-project.org/careers/generalist-operations" target="_blank" rel="noopener">Generalist, Operations at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/averi/32ca3dca-bf34-4430-baf6-79cf8227e9ad" target="_blank" rel="noopener">People Operations Manager at the AI Verification and Evaluation Research Institute <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/64c0e905-ac58-4584-b89d-94706dd4cc36" target="_blank" rel="noopener">Business Operations Associate at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/856c9fc4-9994-4511-a062-6ce4b65428ec" target="_blank" rel="noopener">Senior Workplace Experience Coordinator at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-programme" style="--r3:1;--r2:1;--r1:3"><span>Programme and project management</span></button>
+      <div class="role-panel" id="role-programme" role="region" aria-label="Programme and project management" style="--r3:1;--r2:1;--r1:3" hidden>
+        <div><blockquote><q>People who can ideate, manage, and execute a broad range of non-research projects.</q><cite><a href="https://forum.effectivealtruism.org/posts/k3nq7FxBCsrNFmAYi/ai-safety-s-biggest-talent-gap-isn-t-researchers-it-s-2" target="_blank" rel="noopener">Kairos, AI Safety's Biggest Talent Gap</a></cite></blockquote><p class="does">Running fellowships, courses and residencies from first plan to final report.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Programme manager, programme associate, head of residencies</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://kairos-project.org/careers/gcp-program-manager" target="_blank" rel="noopener">Program Manager, Global Challenges Project at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/50a65dc0-eaa2-4a33-856f-316cf7fe4fb6" target="_blank" rel="noopener">Senior Programs &amp; Strategy Manager at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/generalist-spar" target="_blank" rel="noopener">Generalist, SPAR at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/00763d58-c6ae-4334-a521-71e734a6a65b" target="_blank" rel="noopener">Technical Program Manager, Research at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://www.tarbellcenter.org/careers/head-of-residencies" target="_blank" rel="noopener">Head of Residencies at the Tarbell Center for AI Journalism <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-talent" style="--r3:1;--r2:3;--r1:5"><span>Talent and recruiting</span></button>
+      <div class="role-panel" id="role-talent" role="region" aria-label="Talent and recruiting" style="--r3:1;--r2:3;--r1:5" hidden>
+        <div><blockquote>A good recruiter <q>builds deep networks in AI safety, develops good taste about who would excel</q>.<cite><a href="https://forum.effectivealtruism.org/posts/SE8eXaRJt8cSpJzRf/scaling-organisations-making-ai-go-well-career-review" target="_blank" rel="noopener">80,000 Hours, Scaling organisations making AI go well</a></cite></blockquote><p class="does">Finding people, assessing them fairly and moving them into roles where they fit.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Recruiter, talent operations generalist, head of hiring</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://kairos-project.org/careers/recruiter" target="_blank" rel="noopener">Recruiter at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/generalist-talent-ops" target="_blank" rel="noopener">Generalist, Talent Operations at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/head-of-talent-operations" target="_blank" rel="noopener">Head of Talent Operations at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://job-boards.greenhouse.io/lawzero/jobs/4409412009" target="_blank" rel="noopener">Technical Recruiter at LawZero <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-comms" style="--r3:3;--r2:3;--r1:7"><span>Communications and marketing</span></button>
+      <div class="role-panel" id="role-comms" role="region" aria-label="Communications and marketing" style="--r3:3;--r2:3;--r1:7" hidden>
+        <div><blockquote>Communications staff <q>translate research and policy positions into compelling messages for journalists, lawmakers, and the public</q>.<cite><a href="https://80000hours.org/career-reviews/ai-safety-advocacy/" target="_blank" rel="noopener">80,000 Hours, AI safety advocacy</a></cite></blockquote><p class="does">Writing, media relations, video, design and social channels.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Communications lead, media manager, technical writer, designer</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://app.notion.com/p/Job-posting-Head-of-Communications-AIGS-Canada-c7ec4922651e4d3f9b3b8c5739a96afa" target="_blank" rel="noopener">Head of Communications at AIGS Canada <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://job-boards.greenhouse.io/lawzero/jobs/4297736009" target="_blank" rel="noopener">Senior Researcher Communications Specialist at LawZero <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/7cbe4218-c470-48be-9444-f0733fb6ce77" target="_blank" rel="noopener">Senior Media Manager at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/544abe12-1a7a-4759-abc0-b3bd33626645" target="_blank" rel="noopener">Staff Technical Writer at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://stoptherace.ai/jobs/media-lead" target="_blank" rel="noopener">Media Lead at Stop the AI Race <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.lever.co/epoch-ai/e18b5576-569d-43f8-94ff-3a179445584d" target="_blank" rel="noopener">Social Video Producer at Epoch AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-fieldbuilding" style="--r3:3;--r2:5;--r1:9"><span>Fieldbuilding</span></button>
+      <div class="role-panel" id="role-fieldbuilding" role="region" aria-label="Fieldbuilding" style="--r3:3;--r2:5;--r1:9" hidden>
+        <div><blockquote><q>An hour of good fieldbuilding can enable many hours of direct work.</q><cite><a href="https://80000hours.org/career-reviews/ai-safety-fieldbuilding/" target="_blank" rel="noopener">80,000 Hours, AI safety fieldbuilding</a></cite></blockquote><p class="does">Growing the field itself: the workshops, conferences, local groups and hubs where people meet and start working together.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Community lead, regional organizer, workshop lead</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://jobs.ashbyhq.com/far.ai/018d854f-d320-41be-8313-c40772c80d74" target="_blank" rel="noopener">Community Lead at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/regional-organizer" target="_blank" rel="noopener">Regional Organizer at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/head-of-groups" target="_blank" rel="noopener">Head of Groups at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/generalist-workshops" target="_blank" rel="noopener">Generalist, Workshops at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.ashbyhq.com/far.ai/567d0952-41fa-45a5-a872-42df353a64bf" target="_blank" rel="noopener">Senior Project Manager, Events at FAR.AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://stoptherace.ai/jobs/organizing-operations-lead" target="_blank" rel="noopener">Organizing &amp; Operations Lead at Stop the AI Race <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+      <button class="role-tile tappable" type="button" aria-expanded="false" aria-controls="role-founding" style="--r3:3;--r2:5;--r1:11"><span>Founding and strategy</span></button>
+      <div class="role-panel" id="role-founding" role="region" aria-label="Founding and strategy" style="--r3:3;--r2:5;--r1:11" hidden>
+        <div><blockquote>Starting an organization to tackle a pressing problem <q>can be extremely high impact</q>.<cite><a href="https://80000hours.org/career-reviews/founder-impactful-organisations/" target="_blank" rel="noopener">80,000 Hours, Founder of new projects</a></cite></blockquote><p class="does">Finding a gap, testing a fix and building a team around it, or helping a leader do the same.</p></div>
+        <dl><div><dt>Typical titles</dt><dd>Chief of staff, special projects associate, co-founder</dd></div><div><dt>Open in late November 2026</dt><dd><a href="https://stoptherace.ai/jobs/chief-of-staff/" target="_blank" rel="noopener">Chief of Staff at Stop the AI Race <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://cosmos-institute.org/careers/" target="_blank" rel="noopener">Chief of Staff to the Founder at the Cosmos Institute <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/head-of-kairos-labs" target="_blank" rel="noopener">Head of Kairos Labs at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://kairos-project.org/careers/head-of-special-projects" target="_blank" rel="noopener">Head of Special Projects at Kairos <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd><dd><a href="https://jobs.lever.co/epoch-ai/72778f6d-e7f9-4c01-a5c2-220eb3530a8e" target="_blank" rel="noopener">Special Projects Associate at Epoch AI <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a></dd></div></dl>
+      </div>
+    </div>
+    <p class="roles-note">Each posting links to the employer's own page. All were still listed on 24 November 2026 and may since have closed. The <a href="https://aisafety.com/jobs" target="_blank" rel="noopener">AI safety job board</a> has more. Jet Stream is not affiliated with these organizations and cannot promise a role.</p>
+  </div>
+</section>
+
+<section class="band band-b" id="week">
+  <div class="wrap">
+    <div class="head">
+      <h2>How the week works</h2>
+      <p class="lede">You choose a project before you arrive, from a list of real problems sourced from AI safety organizations. Then you build. Every day ends with something concrete in hand.</p>
+    </div>
+    <ol class="days">
+      <li class="day">
+        <p class="date">Before<span>From late December</span></p>
+        <div><h3>Find your starting point</h3><p>Join an opening call, read a short list of background material, and rank your top three projects. Arrive in Toronto on Thursday 7 January.</p></div>
+        <p class="out"><b>You start with</b>A matched project and mentor</p>
+      </li>
+      <li class="day">
+        <p class="date num">Fri 8 Jan<span>Day 1</span></p>
+        <div><h3>Scope and pitch</h3><p>Get oriented, then cut the project down to something you can finish. Agree the plan with your mentor and pitch it to the cohort by the end of the day.</p></div>
+        <p class="out"><b>You end the day with</b>A scoped plan, pitched</p>
+      </li>
+      <li class="day">
+        <p class="date num">Sat 9 Jan<span>Day 2</span></p>
+        <div><h3>First build</h3><p>One long build block. The bar for the day is simple: something exists that did not exist before, however rough.</p></div>
+        <p class="out"><b>You end the day with</b>A rough first version</p>
+      </li>
+      <li class="day">
+        <p class="date num">Sun 10 Jan<span>Day 3</span></p>
+        <div><h3>Red team</h3><p>Someone else pokes holes in your weakest assumption, and you check in with your mentor. This is the last real chance to change direction.</p></div>
+        <p class="out"><b>You end the day with</b>A tested, adjusted plan</p>
+      </li>
+      <li class="day">
+        <p class="date num">Mon 11 Jan<span>Day 4</span></p>
+        <div><h3>Finish and package</h3><p>A final build block in the morning. The afternoon shifts to packaging: a short demo video, a one-pager, an outreach draft and a handover note.</p></div>
+        <p class="out"><b>You end the day with</b>A demo video and a one-pager</p>
+      </li>
+      <li class="day">
+        <p class="date num">Tue 12 Jan<span>Day 5</span></p>
+        <div><h3>Demo day</h3><p>Send your work to at least one person who can use it, finalize your 30-day plan, and demo in front of the cohort and guests from AI safety organizations.</p></div>
+        <p class="out"><b>You leave with</b>Work in the right hands and a 30-day plan</p>
+      </li>
+    </ol>
+    <p class="aside-note">The point is not to finish an entire project in five days. It is to get far enough that the work can be judged, shared, continued or dropped. After the week we check in at 30 and 90 days, and make introductions where there is a fit.</p>
+  </div>
+</section>
+
+<section class="band" id="who">
+  <div class="wrap">
+    <div class="head">
+      <h2>Who it's for</h2>
+      <p class="lede">Mainly mid-career professionals moving into AI safety, but there is no fixed career stage or experience bar. We look for initiative, the ability to work independently, and skills worth showing.</p>
+    </div>
+    <div class="who">
+      <ul class="ticks">
+        <li>Mid-career professionals looking to move into AI safety</li>
+        <li>BlueDot and SPAR graduates</li>
+        <li>AI safety group organizers who have already shown initiative</li>
+        <li>Early-career people and graduate students with relevant experience</li>
+        <li>People who have built or organized something useful on their own</li>
+      </ul>
+      <div class="panel">
+        <h3>What to expect</h3>
+        <ul>
+          <li>A week of doing, not a course. Very few talks.</li>
+          <li>You should already have some AI safety context before you arrive.</li>
+          <li>Open to people across North America.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="toronto" id="toronto">
+  <div class="wrap">
+    <div>
+      <h2>Why Toronto</h2>
+      <p>Plenty of AI safety context here, and few in-person ways to put it to work.</p>
+    </div>
+    <ul>
+      <li><a class="tappable" href="https://www.utoronto.ca/news/u-t-ranks-third-globally-ai-second-straight-year-shanghairanking-consultancy" target="_blank" rel="noopener"><b>3rd</b>U of T's world rank for AI in ShanghaiRanking's 2026 subject rankings</a></li>
+      <li><a class="tappable" href="https://vectorinstitute.ai/" target="_blank" rel="noopener"><b class="num">962</b>researchers and faculty in the Vector Institute community</a></li>
+      <li><a class="tappable" href="https://hintonlectures.com" target="_blank" rel="noopener"><b>Year 3</b>of the Hinton Lectures on AI safety, held in Toronto every autumn since 2024</a></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="mentors">
+  <div class="wrap">
+    <div class="head">
+      <h2>Have a project? Bring it.</h2>
+      <p class="lede">For organizations, the week works like an extended work trial. You get progress on a problem you care about and a close look at how someone works. It takes about two hours of your time, and you can mentor remotely.</p>
+    </div>
+    <div class="mentors">
+      <ol class="steps">
+        <li><b>Submit a project</b><span>One form per project. We review on a rolling basis until 15 December 2026.</span></li>
+        <li><b>Get matched with a fellow</b><span>Fellows rank the projects they want. We confirm matches in late December.</span></li>
+        <li><b>Two 30-minute calls</b><span>A kickoff on day 1 and a check-in on day 3, with an optional debrief on day 4. The sprint runs over a weekend, so we can move calls if that suits you better.</span></li>
+        <li><b>Demo day, then decide</b><span>See the result on Tuesday 12 January. Nothing is binding: you choose afterwards whether to keep working together.</span></li>
+      </ol>
+      <div class="good">
+        <h3>What makes a good project</h3>
+        <ul>
+          <li>One capable generalist can finish it, or move it meaningfully, in about 20 focused hours.</li>
+          <li>The output will be used, not filed.</li>
+          <li>You can say what done looks like on demo day.</li>
+          <li>Ideally you can offer a next step to a strong fellow: paid work, a trial, or a warm introduction.</li>
+        </ul>
+        <a class="btn btn-light" href="https://airtable.com/applDKTd0XlqBgrWq/pagl116Ptf667IOSN/form" target="_blank" rel="noopener" data-mentor-link>Submit a mentor project <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band join" id="take-part">
+  <div class="wrap">
+    <div class="head">
+      <h2>Take part</h2>
+    </div>
+    <div class="paths">
+      <article class="path">
+        <span class="state" data-fellow-state><span class="pulse"></span>Opening soon</span>
+        <h3>Join as a fellow</h3>
+        <p data-fellow-text>The application form is being finalized and will open here in the coming weeks. Check back soon.</p>
+        <span class="soon" data-fellow-soon>Applications are not open yet</span>
+        <a class="btn btn-light" href="#" target="_blank" rel="noopener" data-fellow-link hidden>Apply as a fellow <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>
+      </article>
+      <article class="path live">
+        <canvas class="wind" aria-hidden="true"></canvas>
+        <span class="state"><span class="live-dot"></span>Open now</span>
+        <h3>Mentor a project</h3>
+        <p>Submit a problem your organization would like solved. Rolling review, with a final deadline of 15 December 2026.</p>
+        <a class="btn btn-light" href="https://airtable.com/applDKTd0XlqBgrWq/pagl116Ptf667IOSN/form" target="_blank" rel="noopener" data-mentor-link>Submit a mentor project <svg class="ext" aria-hidden="true"><use href="#ext"/></svg></a>
+      </article>
+    </div>
+    <p class="contact" data-contact hidden>Questions? Email us at <a href="#" data-contact-link></a></p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="brand" href="#top">
+        <svg viewBox="0 0 30 20" aria-hidden="true"><path d="M2 5c5-3 9 3 14 0s7-3 12-1"/><path d="M2 11c4-2 7 2 11 0s6-2 10-1"/><path d="M2 17c3-2 5 1 8 0"/></svg>
+        Jet Stream <small>Toronto</small>
+      </a>
+      <p>Jet Stream Toronto is inspired by <a href="https://genstream.org/" target="_blank" rel="noopener">Gen Stream</a>, which ran in London and Oxford in 2026. It is organized independently in Toronto and is not run by the Gen Stream team.</p>
+    </div>
+    <ul>
+      <li><a href="#gap">The gap</a></li>
+      <li><a href="#roles">The roles</a></li>
+      <li><a href="#week">The week</a></li>
+      <li><a href="#who">Who it's for</a></li>
+      <li><a href="#mentors">For mentors</a></li>
+      <li><a href="#take-part">Take part</a></li>
+    </ul>
+  </div>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   SITE SETTINGS: the only things you should need to edit.
+   - fellowFormUrl: paste the fellow application link to open applications.
+     While it is empty, the site shows "opening soon".
+   - contactEmail: add an address to show a contact line in "Take part".
+------------------------------------------------------------------- */
+var SITE = {
+  mentorFormUrl: "https://airtable.com/applDKTd0XlqBgrWq/pagl116Ptf667IOSN/form",
+  fellowFormUrl: "",
+  contactEmail: ""
+};
+
+(function settings() {
+  var each = function (sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); };
+  each("[data-mentor-link]", function (a) { a.href = SITE.mentorFormUrl; });
+  if (SITE.fellowFormUrl) {
+    each("[data-fellow-link]", function (a) { a.href = SITE.fellowFormUrl; a.hidden = false; });
+    each("[data-fellow-soon]", function (el) { el.hidden = true; });
+    each("[data-fellow-state]", function (el) { el.innerHTML = '<span class="live-dot"></span>Open now'; });
+    each("[data-fellow-text]", function (el) { el.textContent = "Applications are open. Tell us what you have built or organized, and which kinds of projects you would like to work on."; });
+    var strip = document.querySelector(".strip");
+    if (strip) { strip.firstChild.textContent = "Fellow applications and mentor project submissions are open. "; var s = strip.querySelector("a"); s.textContent = "Take part"; s.removeAttribute("target"); s.removeAttribute("data-mentor-link"); s.href = "#take-part"; }
+  }
+  if (SITE.contactEmail) {
+    each("[data-contact]", function (el) { el.hidden = false; });
+    each("[data-contact-link]", function (a) { a.href = "mailto:" + SITE.contactEmail; a.textContent = SITE.contactEmail; });
+  }
+})();
+
+/* The CN Tower's outline as [height, half-width] pairs, in units where the tower is
+   300 tall (so the main pod sits at about 62% and the SkyPod at about 81%). Shared by
+   the skyline and the scroll tower. */
+var CN = [[0,16.5],[8,14.4],[20,12],[40,9.2],[70,6.6],[100,5.1],[140,3.9],[178,3.3],
+  [180.5,9.5],[183,12],[186.5,12],[188,10.6],[193.5,10.6],[195,8],[198,3.6],[198,3],[239,2.5],
+  [240,4.6],[245,4.6],[247,2.2],[247,1.7],[262,1.7],[262,1.3],[278,1.3],[278,0.9],[292,0.9],[292,0.5],[300,0.5]];
+
+/* How far the reader has scrolled through the hero, 0 to 1. Everything in the sky
+   keys off this one number, so nothing moves unless the reader scrolls. */
+/* The stretch of scrolling over which the city bubbles away. It does not start at the top
+   of the page: the reader first gets to see the whole skyline, standing still, and only
+   then does it begin to go. On a short screen that means waiting until the city has
+   scrolled fully into view. */
+function heroSpan() {
+  var hero = document.getElementById("top");
+  var vh = document.documentElement.clientHeight || window.innerHeight || 800;
+  var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+  if (!hero) return { y0: vh * 0.14, y1: vh * 0.8 };
+  var g = skyGeom(hero);
+  var horizon = hero.getBoundingClientRect().top + y + g.baseY;
+  var y0 = Math.max(vh * 0.14, horizon - vh * 0.86);
+  var y1 = Math.max(y0 + 200, Math.min(y0 + g.H * 0.6, horizon - 150));
+  return { y0: y0, y1: y1 };
+}
+function heroProgress() {
+  var s = heroSpan(), y = window.pageYOffset || document.documentElement.scrollTop || 0;
+  return Math.max(0, Math.min(1, (y - s.y0) / (s.y1 - s.y0)));
+}
+
+/* Where the skyline sits inside the hero. The canvas and the sun both read this, so the
+   sun always comes up from the same horizon the city stands on. */
+function skyGeom(hero) {
+  var r = hero.getBoundingClientRect();
+  var W = Math.max(320, Math.round(r.width)), H = Math.max(200, Math.round(r.height));
+  var compact = W < 1000, base = compact ? 46 : 64;
+  var skyH = Math.min(compact ? 224 : 380, (H - base) * 0.5);
+  return { W: W, H: H, compact: compact, base: base, baseY: H - base, skyH: skyH, k: skyH / 300, tx: W * (compact ? 0.46 : 0.66) };
+}
+
+/* ---------- scroll: tower widget, week line, the sun ---------- */
+(function scrolling() {
+  var towers = Array.prototype.map.call(document.querySelectorAll(".js-tower"), function (svg) {
+    var w = +svg.getAttribute("data-w"), h = +svg.getAttribute("data-h"), pad = +svg.getAttribute("data-pad");
+    var ky = (h - pad * 2) / 300, kx = ky * 1.55, cx = w / 2, base = h - pad, d = "", i;
+    for (i = 0; i < CN.length; i++) d += (i ? "L" : "M") + (cx - Math.max(CN[i][1] * kx, 0.5)).toFixed(2) + " " + (base - CN[i][0] * ky).toFixed(2);
+    for (i = CN.length - 1; i >= 0; i--) d += "L" + (cx + Math.max(CN[i][1] * kx, 0.5)).toFixed(2) + " " + (base - CN[i][0] * ky).toFixed(2);
+    d += "Z";
+    Array.prototype.forEach.call(svg.querySelectorAll(".js-path"), function (p) { p.setAttribute("d", d); });
+    var beacon = svg.querySelector(".js-beacon"), lift = svg.querySelector(".js-lift");
+    if (beacon) { beacon.setAttribute("cx", cx); beacon.setAttribute("cy", pad); }
+    if (lift) lift.setAttribute("cx", cx);
+    return { svg: svg, clip: svg.querySelector(".js-clip"), lift: lift, base: base, span: h - pad * 2 };
+  });
+  var list = document.querySelector(".days");
+  var rows = list ? Array.prototype.slice.call(list.querySelectorAll(".day")) : [];
+  var sun = document.querySelector(".sun:not(.sun-orb)"), orb = document.querySelector(".sun-orb"), heroEl = document.getElementById("top");
+  var topEl = document.querySelector(".top"), board = document.querySelector(".facts dl"), rolesEl = document.getElementById("roles");
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ticking = false;
+
+  function c01(v) { return Math.max(0, Math.min(1, v)); }
+  function sm(v) { v = c01(v); return v * v * (3 - 2 * v); }
+  /* Ease in, steady middle, ease out. Never faster than 1.25 times the average, which is
+     what keeps the sun from ever moving down the screen while the reader scrolls down. */
+  function glide(p) {
+    var a = 0.2, v = 1 / (1 - a), q;
+    p = c01(p);
+    if (p < a) return v * p * p / (2 * a);
+    if (p > 1 - a) { q = 1 - p; return 1 - v * q * q / (2 * a); }
+    return v * (p - a / 2);
+  }
+
+  /* The sun's whole journey, from the scroll position alone:
+     1. once the city has been seen and starts to bubble away, the sun comes up behind it;
+     2. it glides on, holding near the middle of the screen, to the middle of the board;
+     3. it rests there, behind the board, for a moment;
+     4. the board scrolls away and the sun stays: still full size, it sinks slowly down
+        the page behind "The gap" and the roles, lighting them from behind;
+     5. as the roles section ends it shrinks to the size of a timeline dot;
+     6. it lands on the first dot of the week's timeline ("Before"), which lights up. */
+  function placeSun(y, vh) {
+    var g = skyGeom(heroEl);
+    var tr = topEl.getBoundingClientRect(), hr = heroEl.getBoundingClientRect(), br = board.getBoundingClientRect();
+    var topDoc = tr.top + y;
+    var horizon = hr.top - tr.top + g.baseY;
+    var mid = br.top - tr.top + br.height / 2;
+    var x0 = hr.left - tr.left + g.tx - 70 * g.k;      /* over the dome, beside the tower */
+    var x1 = br.left - tr.left + br.width / 2;
+    var size = sun.offsetWidth, disc = size * 0.32, lift = disc / 2 + 2;
+    var hs = heroSpan(), len = hs.y1 - hs.y0;
+    var yA = hs.y0 + len * 0.08, yC = hs.y0 + len * 0.45;
+    var yD = Math.max(yC + (mid - horizon + lift) * 1.25, topDoc + mid - vh * 0.5);
+
+    /* after the board: down the page to the first dot of the week's timeline */
+    var core = size * 0.24;                               /* the bright middle of the disc */
+    var kDot = 17.6 / core;
+    var first = rows[0], fr = first ? first.getBoundingClientRect() : null;
+    var contentLeft = list ? list.getBoundingClientRect().left : br.left;
+    var xg = contentLeft - Math.min(20, contentLeft / 2); /* a column in the page margin */
+    var yE = yD + Math.max(30, Math.min(70, topDoc + mid - yD - vh * 0.26));
+    var sE = topDoc + mid - yE;                           /* the sun's place on screen as it leaves the board */
+    var sF = vh * 0.62 + 38;                              /* the dot's place on screen as it lights */
+    var yF = fr ? fr.top + y + 38 - sF : 0;
+    var yS = rolesEl ? rolesEl.getBoundingClientRect().bottom + y - vh * 0.8 : yF - 400;  /* the roles section is ending */
+    yS = Math.max(yE + 200, Math.min(yS, yF - 260));
+    var travel = !still && !!fr && yF > yE + 600;
+
+    var px = x1, py = mid, glow = 1, cut = 0, k = 1, o = 1, t, f, u, sx, sy;
+    var copyOn = false;
+    if (still) { /* no motion asked for: the sun simply sits behind the board */ }
+    else if (y <= yC) {
+      t = c01((y - yA) / (yC - yA)); f = 1 - Math.pow(1 - t, 2.2);
+      px = x0; py = horizon + lift - 2 * lift * f;     /* starts wholly below the horizon */
+      glow = 0.6 * sm(t / 0.45);
+      cut = Math.max(0, Math.min(disc, py + disc / 2 - horizon));
+    } else if (y <= yD) {
+      t = c01((y - yC) / (yD - yC));
+      px = x0 + (x1 - x0) * sm(t); py = horizon - lift + (mid - horizon + lift) * glide(t);
+      glow = 0.6 + 0.4 * sm(t / 0.5);
+    } else if (!travel || y <= yE) {
+      /* resting behind the board */
+    } else {
+      copyOn = true;
+      if (y < yF) {
+        /* One slow arc: the board scrolls away and the sun stays, sinking a little and
+           drifting towards the timeline. It keeps its full size until the roles section
+           is ending, then shrinks to the size of the dot. */
+        u = c01((y - yE) / (yF - yE)); t = c01((y - yS) / (yF - yS));
+        /* It heads for the page margin beside the timeline, so that once it is small and
+           bright it is never sitting on a line of text; the last step onto the dot comes
+           in the gap just above the list. */
+        f = Math.pow(c01((y - yE) / (yS + (yF - yS) * 0.75 - yE)), 1.5);
+        sx = x1 + tr.left + (xg - x1 - tr.left) * f;
+        sx += (fr.left - 26 - sx) * sm((y - (yF - 70)) / 70);
+        sy = sE + (sF - sE) * sm(u);
+        k = 1 + (kDot - 1) * sm(t / 0.8);
+        /* Behind the board it is dimmed by the board itself. Behind the open page it
+           dims itself by the same amount, so the text over it stays as readable; as it
+           shrinks to a dot it brightens again. */
+        f = sm((sy - tr.bottom + 60) / 160);
+        o = 1 - 0.6 * f * (1 - sm((t - 0.55) / 0.4));       /* bright again only once it is small */
+      } else {
+        sx = fr.left - 26; sy = fr.top + 38; k = kDot;    /* on the dot, fading into it */
+        o = 1 - c01((y - yF) / 70);
+        copyOn = o > 0;
+      }
+      px = sx - tr.left; py = sy - tr.top;
+    }
+    sun.style.setProperty("--sun-x", px.toFixed(1) + "px");
+    sun.style.setProperty("--sun-y", py.toFixed(1) + "px");
+    sun.style.setProperty("--sun-k", k.toFixed(4));
+    sun.style.setProperty("--sun-glow", glow.toFixed(3));
+    sun.style.setProperty("--sun-cut", cut.toFixed(1) + "px");
+    sun.style.setProperty("--sun-o", o.toFixed(3));
+    if (orb) {
+      orb.classList.toggle("is-on", copyOn);
+      if (copyOn) {
+        orb.style.setProperty("--sun-x", sx.toFixed(1) + "px");
+        orb.style.setProperty("--sun-y", sy.toFixed(1) + "px");
+        orb.style.setProperty("--sun-k", k.toFixed(4));
+        orb.style.setProperty("--sun-glow", glow.toFixed(3));
+        orb.style.setProperty("--sun-cut", "0px");
+        orb.style.setProperty("--sun-o", o.toFixed(3));
+      }
+    }
+    if (first) first.classList.toggle("sunlit", travel && y >= yF);
+  }
+
+  function update() {
+    ticking = false;
+    var doc = document.documentElement;
+    var vh = doc.clientHeight || window.innerHeight || 800;
+    var max = Math.max(1, doc.scrollHeight - vh);
+    var p = Math.max(0, Math.min(1, (window.pageYOffset || doc.scrollTop || 0) / max));
+    towers.forEach(function (t) {
+      var y = t.base - t.span * p;
+      t.clip.setAttribute("y", y.toFixed(1));
+      t.clip.setAttribute("height", (t.span * p + 12).toFixed(1));
+      if (t.lift) t.lift.setAttribute("cy", Math.min(t.base - 2, y).toFixed(1));
+      t.svg.classList.toggle("is-top", p > 0.965);
+    });
+    if (sun && heroEl && topEl && board) placeSun(window.pageYOffset || doc.scrollTop || 0, vh);
+    if (list) {
+      var r = list.getBoundingClientRect();
+      list.style.setProperty("--p", Math.max(0, Math.min(1, (vh * 0.62 - r.top) / Math.max(1, r.height))).toFixed(3));
+      rows.forEach(function (row) { row.classList.toggle("on", row.getBoundingClientRect().top < vh * 0.62); });
+    }
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  update();
+  setInterval(update, 500); /* in case the frame holds back animation callbacks */
+})();
+
+/* ---------- the gap: a short version by default, the numbers on request ---------- */
+(function more() {
+  Array.prototype.forEach.call(document.querySelectorAll(".more-btn"), function (btn) {
+    btn.addEventListener("click", function () {
+      var panel = document.getElementById(btn.getAttribute("aria-controls"));
+      var open = btn.getAttribute("aria-expanded") !== "true";
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (panel) panel.hidden = !open;
+      var label = btn.querySelector("span");
+      if (label) label.textContent = btn.getAttribute(open ? "data-open" : "data-closed");
+    });
+  });
+})();
+
+/* ---------- roles: details open on click, one at a time ---------- */
+(function roles() {
+  var tiles = Array.prototype.slice.call(document.querySelectorAll(".role-tile"));
+  tiles.forEach(function (tile) {
+    tile.addEventListener("click", function () {
+      var open = tile.getAttribute("aria-expanded") === "true";
+      tiles.forEach(function (t) {
+        t.setAttribute("aria-expanded", "false");
+        var p = document.getElementById(t.getAttribute("aria-controls"));
+        if (p) p.hidden = true;
+      });
+      if (!open) {
+        tile.setAttribute("aria-expanded", "true");
+        var panel = document.getElementById(tile.getAttribute("aria-controls"));
+        if (panel) panel.hidden = false;
+      }
+    });
+  });
+})();
+
+/* ---------- every clickable square presses and settles ---------- */
+(function taps() {
+  Array.prototype.forEach.call(document.querySelectorAll(".tappable"), function (el) {
+    el.addEventListener("click", function () {
+      el.classList.remove("tap");
+      void el.offsetWidth; /* restart the animation */
+      el.classList.add("tap");
+    });
+    el.addEventListener("animationend", function (ev) { if (ev.animationName === "tap") el.classList.remove("tap"); });
+  });
+})();
+
+/* ---------- the hero sky. Scroll down and the city bubbles away from the top of the
+   tower downward and the elevator rides down ahead of it. Scroll back up and it all
+   runs in reverse. The sun behind the facts board is driven by the same scroll.
+   Only the wind is ambient. */
+(function sky() {
+  var hero = document.getElementById("top"), cv = document.getElementById("sky");
+  if (!hero || !cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var TX = 690; /* the tower's position in scene units */
+  function nowMs() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function smooth(v) { return v * v * (3 - 2 * v); }
+  var T0 = nowMs();
+
+  /* Front row, west to east as seen from the lake: [x, width, height, top]. Heights use
+     the tower's units (300), so the bank towers come out at about half its height. */
+  var FRONT = [
+    [0,26,38],[30,18,52,"step"],[52,30,34],[86,16,64],[106,24,46],[134,18,72,"step"],[156,28,40],
+    [188,16,80,"round"],[208,22,58],[234,18,86,"step"],[256,30,44],[290,16,70],[310,24,54,"slope"],
+    [338,18,78,"round"],[360,26,48],[390,16,84,"step"],[410,22,60],[436,18,74],[458,28,42],
+    [490,16,66,"step"],[510,22,50],[536,18,58],
+    [712,16,127,"round"],[731,15,112,"round"],[750,20,96],[772,18,121,"slope"],[792,16,116,"slope"],
+    [812,20,98,"step"],[834,22,141,"spire"],[858,24,121],[884,26,162,"mast"],[912,22,149,"notch"],
+    [936,22,130],[960,18,118],[980,20,131,"slope"],[1002,18,126,"slope"],[1024,18,111,"curve"],
+    [1046,26,60],[1074,16,150,"step"],[1092,20,95],[1116,24,50]
+  ];
+  var DOME = { x: 620, r: 50, h: 38, drum: 10 };
+  var pal = {
+    back: "rgba(92,72,178,0.42)", bTop: "#3D2D84", bBot: "#1D1445", edge: "rgba(207,195,255,0.24)",
+    win: "#CFC3FF", winWarm: "#FFB55E", warm: 0.14, lit: 0.36,
+    domeTop: "#BBABF7", domeBot: "#5A46B0", domeLine: "rgba(30,19,66,0.45)",
+    tTop: "#F3EEFF", tBot: "#8D79E6", strip: "rgba(255,255,255,0.6)",
+    radome: "#FFFFFF", band: "#B79CFF", podDark: "#2A1A57"
+  };
+  var S = { cv: cv, ctx: ctx };
+  var ps = 0, last = nowMs();
+
+  function towerPath(o, cx, by, k) {
+    var i;
+    o.beginPath();
+    o.moveTo(cx - CN[0][1] * k, by);
+    for (i = 0; i < CN.length; i++) o.lineTo(cx - Math.max(CN[i][1] * k, 0.6), by - CN[i][0] * k);
+    for (i = CN.length - 1; i >= 0; i--) o.lineTo(cx + Math.max(CN[i][1] * k, 0.6), by - CN[i][0] * k);
+    o.closePath();
+  }
+
+  function building(o, b, rand) {
+    var k = S.k, by = S.offH;
+    var x = S.X(b[0]), w = Math.max(2, b[1] * k - 1), h = b[2] * k, y = by - h, type = b[3] || "flat";
+    var g = o.createLinearGradient(0, y, 0, by);
+    g.addColorStop(0, pal.bTop); g.addColorStop(1, pal.bBot);
+    o.fillStyle = g;
+    var cap = 0;
+    o.beginPath();
+    if (type === "round") { cap = w * 0.5; o.moveTo(x, by); o.lineTo(x, y + cap); o.quadraticCurveTo(x, y, x + w / 2, y); o.quadraticCurveTo(x + w, y, x + w, y + cap); o.lineTo(x + w, by); }
+    else if (type === "slope") { cap = w * 0.45; o.moveTo(x, by); o.lineTo(x, y + cap); o.lineTo(x + w, y); o.lineTo(x + w, by); }
+    else if (type === "curve") { cap = w * 1.1; o.moveTo(x, by); o.lineTo(x, y + cap); o.quadraticCurveTo(x + w * 0.08, y, x + w, y); o.lineTo(x + w, by); }
+    else if (type === "notch") { cap = w * 0.5; o.moveTo(x, by); o.lineTo(x, y + cap); o.lineTo(x + w * 0.32, y + cap); o.lineTo(x + w * 0.32, y); o.lineTo(x + w, y); o.lineTo(x + w, by); }
+    else { o.rect(x, y, w, h); }
+    o.closePath(); o.fill();
+    if (type === "step" || type === "spire") {
+      o.fillRect(x + w * 0.2, y - 6 * k, w * 0.6, 6 * k + 1);
+      if (type === "spire") { o.fillRect(x + w * 0.38, y - 12 * k, w * 0.24, 6 * k + 1); o.fillRect(x + w / 2 - Math.max(0.5, 0.6 * k), y - 27 * k, Math.max(1, 1.2 * k), 15 * k); }
+    }
+    if (type === "mast") { o.fillRect(x + w * 0.26, y - 9 * k, Math.max(1, k), 9 * k); o.fillRect(x + w * 0.7, y - 13 * k, Math.max(1, k), 13 * k); }
+    o.fillStyle = pal.edge;
+    o.fillRect(x, y + cap, Math.max(1, 0.7 * k), h - cap);
+    var cw = 4.2 * k, ch = 5.2 * k, ww = Math.max(1, 1.7 * k), wh = Math.max(1.2, 2.3 * k), xx, yy;
+    for (yy = y + cap + 3.5 * k; yy < by - 3 * k; yy += ch) {
+      for (xx = x + 1.8 * k; xx < x + w - ww - 0.8 * k; xx += cw) {
+        if (rand() < pal.lit) {
+          o.fillStyle = rand() < pal.warm ? pal.winWarm : pal.win;
+          o.globalAlpha = 0.35 + rand() * 0.6;
+          o.fillRect(xx, yy, ww, wh);
+        }
+      }
+    }
+    o.globalAlpha = 1;
+  }
+
+  function paint() {
+    var o = S.octx, k = S.k, by = S.offH, rand = rng(11), x, w, h;
+    o.clearRect(0, 0, S.W, S.offH);
+    o.fillStyle = pal.back; /* far row: hazier, taller behind the bank towers */
+    x = S.minU - 20;
+    while (x < S.maxU + 20) {
+      w = 12 + rand() * 16;
+      h = 24 + rand() * 42 + 74 * Math.exp(-Math.pow((x - 900) / 150, 2)) + 24 * Math.exp(-Math.pow((x - 240) / 130, 2));
+      o.fillRect(S.X(x), by - h * k, w * k, h * k);
+      x += w + 3 + rand() * 6;
+    }
+    var all = FRONT.slice(); /* plus filler low-rise for very wide screens */
+    x = -4;
+    while (x > S.minU - 30) { w = 14 + rand() * 18; x -= w + 2; all.push([x, w, 22 + rand() * 40, rand() < 0.25 ? "step" : "flat"]); }
+    x = 1142;
+    while (x < S.maxU + 30) { w = 14 + rand() * 18; all.push([x, w, 22 + rand() * 42]); x += w + 2; }
+    all.forEach(function (bd) { building(o, bd, rand); });
+
+    var dx = S.X(DOME.x), rw = DOME.r * k, rh = DOME.h * k, drum = DOME.drum * k; /* Rogers Centre */
+    var dg = o.createLinearGradient(0, by - drum - rh, 0, by);
+    dg.addColorStop(0, pal.domeTop); dg.addColorStop(1, pal.domeBot);
+    o.fillStyle = dg;
+    o.fillRect(dx - rw, by - drum, rw * 2, drum);
+    o.beginPath(); o.ellipse(dx, by - drum, rw, rh, 0, Math.PI, 0); o.fill();
+    o.strokeStyle = pal.domeLine; o.lineWidth = Math.max(0.6, 0.55 * k);
+    [0.66, 0.34].forEach(function (f) { o.beginPath(); o.ellipse(dx, by - drum, rw * f, rh * 0.985, 0, Math.PI, 0); o.stroke(); });
+    o.beginPath(); o.ellipse(dx, by - drum, rw, rh * 0.5, 0, Math.PI, 0); o.stroke();
+    o.beginPath(); o.moveTo(dx - rw, by - drum); o.lineTo(dx + rw, by - drum); o.stroke();
+
+    var cx = S.tx; /* CN Tower */
+    var gl = o.createRadialGradient(cx, by - 188 * k, 0, cx, by - 188 * k, 46 * k);
+    gl.addColorStop(0, "rgba(140,110,255,0.5)"); gl.addColorStop(1, "rgba(140,110,255,0)");
+    o.fillStyle = gl; o.fillRect(cx - 46 * k, by - 234 * k, 92 * k, 92 * k);
+    var tg = o.createLinearGradient(0, by - 300 * k, 0, by);
+    tg.addColorStop(0, pal.tTop); tg.addColorStop(1, pal.tBot);
+    o.fillStyle = tg; towerPath(o, cx, by, k); o.fill();
+    o.save(); towerPath(o, cx, by, k); o.clip();
+    o.fillStyle = pal.strip; o.fillRect(cx - Math.max(0.5, 0.7 * k), by - 178 * k, Math.max(1, 1.4 * k), 172 * k);
+    o.fillStyle = pal.radome; o.fillRect(cx - 14 * k, by - 187.4 * k, 28 * k, 7.4 * k);
+    o.fillStyle = pal.podDark; o.fillRect(cx - 14 * k, by - 190.8 * k, 28 * k, Math.max(1, 1.6 * k));
+    o.fillStyle = pal.band; o.fillRect(cx - 14 * k, by - 193.5 * k, 28 * k, Math.max(1, 2.2 * k));
+    o.fillRect(cx - 6 * k, by - 244.6 * k, 12 * k, Math.max(1, 1.6 * k));
+    o.restore();
+  }
+
+  /* Cut the finished picture into small cells. At rest they sit in place and read as the
+     picture; as the reader scrolls each one lets go and floats up as a bubble. */
+  function sample() {
+    var d = S.dpr, ow = S.off.width, oh = S.off.height;
+    var data = S.octx.getImageData(0, 0, ow, oh).data;
+    var s = S.W > 1100 ? 4 : 3, parts, rand, x, y, i, r, g, b, a, hn, r1, r2, r3;
+    do {
+      parts = []; rand = rng(7);
+      for (y = s / 2; y < S.offH; y += s) {
+        for (x = s / 2; x < S.W; x += s) {
+          i = (Math.min(oh - 1, Math.floor(y * d)) * ow + Math.min(ow - 1, Math.floor(x * d))) * 4;
+          a = data[i + 3];
+          if (a < 80) continue;
+          r = (data[i] & 240) | 8; g = (data[i + 1] & 240) | 8; b = (data[i + 2] & 240) | 8;
+          hn = clamp01((S.offH - y) / S.skyH); r1 = rand(); r2 = rand(); r3 = rand();
+          parts.push({
+            hx: x - s / 2, hy: S.baseY - S.offH + y - s / 2, a: a / 255, key: (r << 16) | (g << 8) | b,
+            c: "rgb(" + r + "," + g + "," + b + ")", ph: r3 * 6.283, ring: r2 < 0.07, big: 0.7 + r1 * 1.5,
+            out: clamp01((1 - hn) * 0.62 + r2 * 0.38), /* the top of the tower goes first */
+            dx: 10 + r1 * 130, dy: 70 + r3 * 230
+          });
+        }
+      }
+      s += 1;
+    } while (parts.length > 15000 && s < 9);
+    S.ps = s - 1;
+    parts.sort(function (p, q) { return p.key - q.key; });
+    S.parts = parts;
+  }
+
+  function build() {
+    var geo = skyGeom(hero);
+    S.W = geo.W; S.H = geo.H;
+    S.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(S.W * S.dpr); cv.height = Math.round(S.H * S.dpr);
+    ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    S.compact = geo.compact;
+    S.base = geo.base;
+    S.baseY = geo.baseY;
+    S.skyH = geo.skyH;
+    S.k = geo.k;
+    S.tx = geo.tx;
+    S.X = function (u) { return S.tx + (u - TX) * S.k; };
+    S.minU = TX - S.tx / S.k; S.maxU = TX + (S.W - S.tx) / S.k;
+    S.offH = Math.ceil(S.skyH) + 26;
+    S.off = S.off || document.createElement("canvas");
+    S.off.width = Math.round(S.W * S.dpr); S.off.height = Math.round(S.offH * S.dpr);
+    S.octx = S.off.getContext("2d", { willReadFrequently: true });
+    S.octx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    paint();
+    sample();
+
+    S.rH = Math.min(S.base - 4, 64); /* water reflection, faded once here */
+    S.refl = S.refl || document.createElement("canvas");
+    S.refl.width = S.off.width; S.refl.height = Math.max(1, Math.round(S.rH * S.dpr));
+    var rc = S.refl.getContext("2d");
+    rc.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
+    rc.clearRect(0, 0, S.W, S.rH);
+    rc.save(); rc.translate(0, S.rH); rc.scale(1, -1);
+    rc.drawImage(S.off, 0, S.rH - S.offH * 0.34, S.W, S.offH * 0.34);
+    rc.restore();
+    rc.globalCompositeOperation = "destination-in";
+    var fade = rc.createLinearGradient(0, 0, 0, S.rH);
+    fade.addColorStop(0, "rgba(0,0,0,0.42)"); fade.addColorStop(1, "rgba(0,0,0,0)");
+    rc.fillStyle = fade; rc.fillRect(0, 0, S.W, S.rH);
+    rc.globalCompositeOperation = "source-over";
+
+    var r2 = rng(21), n = Math.round(Math.min(56, Math.max(20, S.W / 26)));
+    S.lines = [];
+    for (var i = 0; i < n; i++) {
+      S.lines.push({ x: r2() * (S.W + 500) - 250, lane: 0.06 + r2() * 0.5, sp: 34 + r2() * 92,
+        len: 70 + r2() * 200, a: 0.07 + r2() * 0.2, w: 0.6 + r2() * 1.3, ph: r2() * 6.283, warm: r2() < 0.1 });
+    }
+    last = nowMs();
+  }
+
+  function drawStream(t, dt) {
+    var c = ctx, i, j, l, xx, yy, px, py;
+    c.lineCap = "round";
+    for (i = 0; i < S.lines.length; i++) {
+      l = S.lines[i];
+      l.x += l.sp * dt;
+      if (l.x - l.len > S.W + 60) l.x = -60;
+      c.strokeStyle = l.warm ? "rgb(255,181,94)" : "rgb(207,195,255)";
+      c.lineWidth = l.w;
+      for (j = 0; j <= 8; j++) {
+        xx = l.x - l.len * (1 - j / 8);
+        yy = S.H * l.lane + Math.sin(xx * 0.0042 + t * 0.22 + l.ph * 0.15) * S.H * 0.045
+          + Math.sin(xx * 0.0105 - t * 0.35 + l.ph) * S.H * 0.016 - (xx / S.W) * S.H * 0.07;
+        if (j > 0) { c.globalAlpha = l.a * Math.pow(j / 8, 1.6); c.beginPath(); c.moveTo(px, py); c.lineTo(xx, yy); c.stroke(); }
+        px = xx; py = yy;
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
+  function drawBubbles(e) {
+    var c = ctx, parts = S.parts, s = S.ps, cell = s + 0.4, i, p, l, m, x, y, a, r, last = "";
+    for (i = 0; i < parts.length; i++) {
+      p = parts[i];
+      l = clamp01((e - p.out * 0.6) / 0.4);
+      if (l >= 0.985) continue;
+      if (p.c !== last) { c.fillStyle = p.c; c.strokeStyle = p.c; last = p.c; }
+      if (l <= 0) { c.globalAlpha = p.a; c.fillRect(p.hx, p.hy, cell, cell); continue; }
+      m = l * l;
+      x = p.hx + s / 2 + p.dx * m + Math.sin(p.ph + l * 7) * 9 * l;
+      y = p.hy + s / 2 - p.dy * m;
+      a = (1 - l) * p.a;
+      r = s * 0.5 * (1 + l * p.big);
+      c.globalAlpha = a;
+      c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill();
+      if (p.ring) { c.globalAlpha = a * 0.7; c.lineWidth = 1; c.beginPath(); c.arc(x, y, r * 2.4 + 1, 0, 6.283); c.stroke(); }
+    }
+    c.globalAlpha = 1;
+  }
+
+  function render(now) {
+    var c = ctx, t = (now - T0) / 1000, dt = Math.min(0.25, Math.max(0, (now - last) / 1000));
+    last = now;
+    var target = reduce ? 0 : heroProgress();
+    ps += (target - ps) * Math.min(1, dt * 10);
+    if (Math.abs(target - ps) < 0.0006) ps = target;
+    var e = ps <= 0 ? 0 : smooth(clamp01(ps / 0.94));
+    var k = S.k, cx = S.tx, by = S.baseY, top = by - S.offH;
+
+    c.clearRect(0, 0, S.W, S.H);
+    drawStream(reduce ? 0 : t, reduce ? 0 : dt);
+
+    if (e <= 0) {
+      c.drawImage(S.off, 0, top, S.W, S.offH);
+    } else if (e < 1) {
+      drawBubbles(e);
+      if (e < 0.05) { c.globalAlpha = 1 - e / 0.05; c.drawImage(S.off, 0, top, S.W, S.offH); c.globalAlpha = 1; }
+    }
+    if (e < 1 && S.rH > 6) { c.globalAlpha = Math.pow(1 - e, 2); c.drawImage(S.refl, 0, by + 2, S.W, S.rH); c.globalAlpha = 1; }
+
+    /* the elevator: at the pod when the page is at the top, riding down as you scroll */
+    if (e < 0.9) {
+      var eh = 176 - e * 168;
+      c.globalAlpha = 1 - clamp01((e - 0.7) / 0.2);
+      c.fillStyle = "#FFB55E";
+      c.beginPath(); c.arc(cx, by - eh * k, Math.max(2.2, 2.4 * k), 0, 6.283); c.fill();
+      c.globalAlpha *= 0.3;
+      c.beginPath(); c.arc(cx, by - eh * k, Math.max(5, 6 * k), 0, 6.283); c.fill();
+      c.globalAlpha = 1;
+    }
+    if (e < 0.02) { /* beacon on the antenna while the tower is whole */
+      c.fillStyle = "#FF6A4D";
+      c.beginPath(); c.arc(cx, by - 300 * k, Math.max(1.6, 1.5 * k), 0, 6.283); c.fill();
+      c.globalAlpha = 0.25; c.beginPath(); c.arc(cx, by - 300 * k, Math.max(4, 5 * k), 0, 6.283); c.fill();
+      c.globalAlpha = 1;
+    }
+    var g = c.createLinearGradient(0, 0, S.W, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.4, "rgba(207,195,255,0.35)");
+    g.addColorStop(0.62, "rgba(255,181,94,0.45)"); g.addColorStop(1, "rgba(255,255,255,0.08)");
+    c.globalAlpha = 1 - 0.8 * e; /* the horizon fades with the city, so it does not cut across the sun */
+    c.fillStyle = g; c.fillRect(0, by + 1, S.W, 1);
+    c.globalAlpha = 1;
+  }
+
+  function visible() {
+    var r = hero.getBoundingClientRect(), vh = window.innerHeight || 800;
+    return r.bottom > -40 && r.top < vh + 40;
+  }
+  function tick() { if (visible()) render(nowMs()); }
+
+  build();
+  tick();
+  window.addEventListener("scroll", tick, { passive: true }); /* scroll is what drives it */
+  if (!reduce) {
+    var lastFrame = 0;
+    (function loop() { lastFrame = nowMs(); tick(); requestAnimationFrame(loop); })();
+    setInterval(function () { if (!document.hidden && nowMs() - lastFrame > 180) tick(); }, 90);
+  }
+  var timer = 0;
+  function rebuild() { clearTimeout(timer); timer = setTimeout(function () { build(); tick(); }, 160); }
+  window.addEventListener("resize", rebuild);
+  if (window.ResizeObserver) new ResizeObserver(function () { var r = hero.getBoundingClientRect(); if (Math.round(r.width) !== S.W || Math.round(r.height) !== S.H) rebuild(); }).observe(hero);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
+})();
+/* ---------- wind on the mentor card ----------
+   Streaks cross the corner of the card the way wind does: they come in gusts that all
+   the streaks share, stretch as they speed up, ripple along their length like a ribbon,
+   and trail off behind. Nothing here loops on a fixed beat. It only runs while the card
+   is on screen, and holds one still frame if the reader asked for reduced motion. */
+(function wind() {
+  var cv = document.querySelector(".path canvas.wind");
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var W = 0, H = 0, lines = [], last = 0, clock = 0, phase = 0, onScreen = false, raf = 0, seed = 11;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function sm(v) { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); }
+
+  function spawn(l, anywhere) {
+    l.lane = 0.38 + rnd() * 0.52;     /* how high in the band it runs */
+    l.sp = 80 + rnd() * 110;          /* px per second at full gust */
+    l.len = 150 + rnd() * 150;
+    l.a = 0.42 + rnd() * 0.34;
+    l.w = 1.4 + rnd() * 0.7;
+    l.amp = 6 + rnd() * 5;
+    l.ph = rnd() * 6.283;
+    l.x = anywhere ? rnd() * (W + l.len) : -10 - rnd() * 200;   /* head of the streak */
+  }
+  function size() {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(120, Math.round(r.width)); H = Math.max(60, Math.round(r.height));
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var n = W < 300 ? 4 : 6;
+    lines = [];
+    for (var i = 0; i < n; i++) { lines.push({}); spawn(lines[i], true); }
+  }
+  /* Gusts: long lulls where the air barely moves, then a push. Irregular on purpose. */
+  function gust(t) {
+    var s = 0.5 + 0.5 * Math.sin(t * 0.66 + 1.4 * Math.sin(t * 0.21));
+    var flutter = 0.08 * Math.sin(t * 3.1) * s;
+    return 0.22 + 1.2 * s * s + flutter;
+  }
+  function draw(dt) {
+    var g = reduce ? 0.8 : gust(clock), N = 30, i, j, l, len, xx, yy, f, grad;
+    phase += g * dt;
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (i = 0; i < lines.length; i++) {
+      l = lines[i];
+      l.x += l.sp * g * dt;
+      len = l.len * (0.5 + 0.6 * g);                 /* a gust pulls the streak longer */
+      if (l.x - len > W + 20) { spawn(l, false); continue; }
+      ctx.beginPath();
+      for (j = 0; j <= N; j++) {
+        f = j / N;
+        xx = l.x - len * (1 - f);
+        /* the ripple runs along the streak faster than the streak itself travels */
+        yy = H * l.lane - xx * 0.04
+          + Math.sin(xx * 0.043 - phase * 7.5 + l.ph) * l.amp
+          + Math.sin(xx * 0.021 - phase * 2.6 + l.ph * 1.7) * l.amp * 0.5;
+        if (j) ctx.lineTo(xx, yy); else ctx.moveTo(xx, yy);
+      }
+      grad = ctx.createLinearGradient(l.x - len, 0, l.x, 0);   /* faint tail, bright head */
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.55, "rgba(255,255,255," + (l.a * 0.5).toFixed(3) + ")");
+      grad.addColorStop(0.93, "rgba(255,255,255," + l.a.toFixed(3) + ")");
+      grad.addColorStop(1, "rgba(255,255,255," + (l.a * 0.7).toFixed(3) + ")");
+      ctx.strokeStyle = grad; ctx.lineWidth = l.w; ctx.stroke();
+    }
+    /* streaks come out of nothing on the left instead of starting at a hard edge */
+    ctx.globalCompositeOperation = "destination-in";
+    grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, "rgba(0,0,0,0)"); grad.addColorStop(0.42, "rgba(0,0,0,1)");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+  }
+  function loop(now) {
+    raf = 0;
+    var dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now; clock += dt;
+    draw(dt);
+    if (onScreen && !document.hidden) raf = requestAnimationFrame(loop);
+  }
+  function start() { if (!raf && !reduce) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+
+  size();
+  draw(0);
+  if (reduce) { window.addEventListener("resize", function () { size(); draw(0); }); return; }
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (en) { onScreen = en[0].isIntersecting; if (onScreen) start(); }, { rootMargin: "80px" }).observe(cv);
+  } else { onScreen = true; start(); }
+  document.addEventListener("visibilitychange", function () { if (onScreen && !document.hidden) start(); });
+  var t = 0;
+  window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(function () { size(); draw(0); }, 160); });
+})();
+</script>
+</body>
+</html>
